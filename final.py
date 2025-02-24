@@ -10,10 +10,7 @@ import random
 import os
 import torch
 from torchvision.models.detection import fasterrcnn_resnet50_fpn_v2, FasterRCNN_ResNet50_FPN_V2_Weights
-import google.generativeai as genai
-
-# Initialize Gemini API
-genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+from firebase_config import auth
 
 # Create a users directory if it doesn't exist
 if not os.path.exists('users'):
@@ -70,6 +67,22 @@ def load_user_data(email):
     except FileNotFoundError:
         return None
 
+# def initialize_session_state():
+#     if 'logged_in' not in st.session_state:
+#         st.session_state.logged_in = False
+#     if 'current_page' not in st.session_state:
+#         st.session_state.current_page = 'login'
+#     if 'user_interests' not in st.session_state:
+#         st.session_state.user_interests = []
+#     if 'chat_messages' not in st.session_state:
+#         st.session_state.chat_messages = []
+#     if 'user_profile' not in st.session_state:
+#         st.session_state.user_profile = None
+#     if 'navigation_history' not in st.session_state:
+#         st.session_state.navigation_history = []
+#     if 'detected_objects' not in st.session_state:
+#         st.session_state.detected_objects = set()
+
 def initialize_session_state():
     if 'logged_in' not in st.session_state:
         st.session_state.logged_in = False
@@ -85,6 +98,10 @@ def initialize_session_state():
         st.session_state.navigation_history = []
     if 'detected_objects' not in st.session_state:
         st.session_state.detected_objects = set()
+    if 'user_email' not in st.session_state:
+        st.session_state.user_email = None
+    if 'user_token' not in st.session_state:
+        st.session_state.user_token = None
 
 def navigate_to(page):
     if st.session_state.current_page != page:
@@ -105,19 +122,110 @@ def navigation_buttons():
     with col2:
         if st.button("Forward →") and st.session_state.current_page != 'dashboard':
             navigate_to('dashboard')
+def handle_login(email, password):
+    try:
+        user = auth.sign_in_with_email_and_password(email, password)
+        st.session_state.user_email = email
+        st.session_state.user_token = user['idToken']
+        st.session_state.logged_in = True
+        
+        # Load user data if exists
+        user_data = load_user_data(email)
+        if user_data:
+            st.session_state.user_interests = user_data.get('interests', [])
+            st.session_state.user_profile = user_data
+            st.session_state.current_page = 'dashboard'
+        else:
+            st.session_state.current_page = 'interests'
+        return True
+    except Exception as e:
+        st.error(f"Login failed: {str(e)}")
+        return False
+
+def handle_signup(email, password, full_name):
+    try:
+        # Create user in Firebase
+        user = auth.create_user_with_email_and_password(email, password)
+        
+        # Initialize user data
+        user_data = {
+            'email': email,
+            'full_name': full_name,
+            'interests': [],
+            'joined_date': datetime.now().strftime("%Y-%m-%d"),
+            'courses': []
+        }
+        
+        # Save user data
+        save_user_data(email, user_data)
+        
+        # Set session state
+        st.session_state.user_email = email
+        st.session_state.user_token = user['idToken']
+        st.session_state.user_profile = user_data
+        st.session_state.logged_in = True
+        st.session_state.current_page = 'interests'
+        return True
+    except Exception as e:
+        st.error(f"Sign up failed: {str(e)}")
+        return False
+def logout():
+    st.session_state.logged_in = False
+    st.session_state.user_email = None
+    st.session_state.user_token = None
+    st.session_state.user_profile = None
+    st.session_state.current_page = 'login'
+    st.rerun()
+# def login_page():
+#     st.markdown("""
+#         <style>
+#         .login-container { padding: 2rem; }
+#         </style>
+#     """, unsafe_allow_html=True)
+    
+#     col1, col2 = st.columns(2)
+    
+#     with col1:
+#         st.image("https://via.placeholder.com/150", caption="Logo")
+#         st.markdown("### EcoLearn")
+#         st.markdown("*Transforming physical resources into digital learning experiences*")
+    
+#     with col2:
+#         st.markdown("### Welcome!")
+#         tab1, tab2 = st.tabs(["Login", "Sign Up"])
+        
+#         with tab1:
+#             email = st.text_input("Email", key="login_email")
+#             password = st.text_input("Password", type="password", key="login_password")
+#             if st.button("Login"):
+#                 st.session_state.current_page = 'interests'
+#                 st.session_state.logged_in = True
+#                 st.rerun()
+                
+#         with tab2:
+#             st.text_input("Full Name", key="signup_name")
+#             st.text_input("Email", key="signup_email")
+#             st.text_input("Password", type="password", key="signup_password")
+#             st.text_input("Confirm Password", type="password", key="signup_confirm")
+#             if st.button("Sign Up"):
+#                 st.session_state.current_page = 'interests'
+#                 st.session_state.logged_in = True
+#                 st.rerun()
 
 def login_page():
     st.markdown("""
         <style>
         .login-container { padding: 2rem; }
+        .stAlert { color: black !important; }
         </style>
     """, unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
     
     with col1:
-        st.markdown("# XenLearn")
-        st.markdown("### Transforming physical resources into digital learning experiences")
+        st.image("https://via.placeholder.com/150", caption="Logo")
+        st.markdown("### EcoLearn")
+        st.markdown("*Transforming physical resources into digital learning experiences*")
     
     with col2:
         st.markdown("### Welcome!")
@@ -127,19 +235,28 @@ def login_page():
             email = st.text_input("Email", key="login_email")
             password = st.text_input("Password", type="password", key="login_password")
             if st.button("Login"):
-                st.session_state.current_page = 'interests'
-                st.session_state.logged_in = True
-                st.rerun()
+                if email and password:
+                    if handle_login(email, password):
+                        st.success("Login successful!")
+                        st.rerun()
+                else:
+                    st.warning("Please enter both email and password.")
                 
         with tab2:
-            st.text_input("Full Name", key="signup_name")
-            st.text_input("Email", key="signup_email")
-            st.text_input("Password", type="password", key="signup_password")
-            st.text_input("Confirm Password", type="password", key="signup_confirm")
+            full_name = st.text_input("Full Name", key="signup_name")
+            email = st.text_input("Email", key="signup_email")
+            password = st.text_input("Password", type="password", key="signup_password")
+            confirm_password = st.text_input("Confirm Password", type="password", key="signup_confirm")
+            
             if st.button("Sign Up"):
-                st.session_state.current_page = 'interests'
-                st.session_state.logged_in = True
-                st.rerun()
+                if not all([full_name, email, password, confirm_password]):
+                    st.warning("Please fill in all fields.")
+                elif password != confirm_password:
+                    st.warning("Passwords do not match.")
+                else:
+                    if handle_signup(email, password, full_name):
+                        st.success("Sign up successful! Please proceed to set your interests.")
+                        st.rerun()
 
 def interests_page():
     st.title("Select Your Interests")
@@ -166,18 +283,48 @@ def interests_page():
         st.session_state.current_page = 'dashboard'
         st.rerun()
 
+# def profile_page():
+#     st.title("Profile Settings")
+    
+#     with st.form("profile_form"):
+#         new_email = st.text_input("Email", value=st.session_state.user_profile['email'])
+#         new_password = st.text_input("New Password", type="password", placeholder="Leave blank to keep current")
+        
+#         if st.form_submit_button("Save Changes"):
+#             st.session_state.user_profile['email'] = new_email
+#             if new_password:
+#                 st.session_state.user_profile['password'] = new_password
+#             st.success("Profile updated successfully!")
+
 def profile_page():
     st.title("Profile Settings")
     
+    if not st.session_state.user_profile:
+        st.warning("Please log in to view profile settings.")
+        return
+    
     with st.form("profile_form"):
+        new_full_name = st.text_input("Full Name", value=st.session_state.user_profile['full_name'])
         new_email = st.text_input("Email", value=st.session_state.user_profile['email'])
         new_password = st.text_input("New Password", type="password", placeholder="Leave blank to keep current")
         
         if st.form_submit_button("Save Changes"):
-            st.session_state.user_profile['email'] = new_email
-            if new_password:
-                st.session_state.user_profile['password'] = new_password
-            st.success("Profile updated successfully!")
+            try:
+                # Update Firebase auth if email/password changed
+                if new_password:
+                    auth.update_user_password(st.session_state.user_token, new_password)
+                if new_email != st.session_state.user_profile['email']:
+                    auth.update_user_email(st.session_state.user_token, new_email)
+                
+                # Update local profile
+                st.session_state.user_profile.update({
+                    'email': new_email,
+                    'full_name': new_full_name
+                })
+                save_user_data(new_email, st.session_state.user_profile)
+                st.success("Profile updated successfully!")
+            except Exception as e:
+                st.error(f"Failed to update profile: {str(e)}")
 
 def collaboration_page():
     st.title("Collaboration Hub")
@@ -298,63 +445,6 @@ def get_camera_course_recommendations(detected_objects):
                 seen_courses.add(key)
     return recommendations
 
-def get_project_suggestions(detected_objects):
-    """Get creative project suggestions based on detected objects using Gemini API"""
-    if not detected_objects:
-        return []
-    
-    try:
-        objects_list = ", ".join(detected_objects)
-        prompt = f"""Given these objects: {objects_list}
-        Generate exactly 3 creative, fun, and educational experiments or projects that can be done using these items. These experiments should be of professional level that one can issue certifications for.
-        
-        Return ONLY a valid JSON array with exactly this structure and no additional text:
-        [
-            {{
-                "title": "Project Title",
-                "description": "Project description",
-                "difficulty": "easy/medium/hard",
-                "time": "30 minutes"
-            }},
-            {{
-                "title": "Second Project",
-                "description": "Second description",
-                "difficulty": "easy/medium/hard",
-                "time": "1 hour"
-            }},
-            {{
-                "title": "Third Project",
-                "description": "Third description",
-                "difficulty": "easy/medium/hard",
-                "time": "45 minutes"
-            }}
-        ]"""
-
-        model = genai.GenerativeModel('gemini-pro')
-        response = model.generate_content(prompt)
-        
-        # Add safety check for response
-        if not response.text:
-            return []
-            
-        try:
-            # Clean the response text and parse JSON
-            cleaned_text = response.text.strip()
-            suggestions = json.loads(cleaned_text)
-            
-            # Validate the structure
-            if not isinstance(suggestions, list):
-                return []
-                
-            return suggestions
-        except json.JSONDecodeError as je:
-            st.error(f"Invalid JSON format in response: {je}")
-            return []
-            
-    except Exception as e:
-        st.error(f"Error generating project suggestions: {str(e)}")
-        return []
-
 def object_detection():
     st.title("Course Finder - Photo Analysis")
     navigation_buttons()
@@ -447,24 +537,6 @@ def object_detection():
                     """, unsafe_allow_html=True)
             else:
                 st.info("No course recommendations found for detected objects.")
-        
-        # Add project suggestions section
-        st.markdown("### Creative Projects")
-        if hasattr(st.session_state, 'detected_objects') and st.session_state.detected_objects:
-            projects = get_project_suggestions(st.session_state.detected_objects)
-            
-            if projects:
-                for project in projects:
-                    st.markdown(f"""
-                        <div style='background-color: white; padding: 15px; border-radius: 10px; margin: 10px 0;'>
-                            <h4 style='color: black;'>{project['title']}</h4>
-                            <p style='color: black;'>{project['description']}</p>
-                            <p style='color: black;'>Difficulty: {project['difficulty']}</p>
-                            <p style='color: black;'>Time: {project['time']}</p>
-                        </div>
-                    """, unsafe_allow_html=True)
-            else:
-                st.info("No project suggestions available.")
         else:
             st.info("Take a picture to get course recommendations!")
 
@@ -583,7 +655,7 @@ def dashboard():
             
 def main():
     initialize_session_state()
-    st.set_page_config(page_title="XenLearn", layout="wide")
+    st.set_page_config(page_title="EcoLearn", layout="wide")
     
     if not st.session_state.logged_in:
         login_page()
