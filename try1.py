@@ -216,11 +216,19 @@ def dashboard():
         <style>
         .stApp { background-color: #f5f5f5; }
         .nav-button { margin: 5px 0; }
-        p { color: black !important; }
+        
         h4,h5,h6 {color: black !important}
         h1, h2, h3 {color: black !important}
         [data-testid="stMetricValue"] div { color: black !important; }
-        [data-testid="stMetricDelta"] div { color: black !important; }
+        [data-testid="stTextInput"] label { color: black !important; }
+        [data-testid="stMetricLabel"] {
+            color: black !important;
+            font-weight: bold;
+        label { 
+            color: black !important;
+            font-weight: bold;
+        }
+        }
         
         </style>
     """, unsafe_allow_html=True)
@@ -228,7 +236,7 @@ def dashboard():
     # Top bar
     col1, col2, col3 = st.columns([2,1,1])
     with col1:
-        st.text_input("🔍 Search for courses, materials, or topics...")
+        st.text_input("🔍 Search for courses, materials, or topics...", label_visibility='visible')
     with col2:
         st.metric("Points", "1250", "+50 today")
     with col3:
