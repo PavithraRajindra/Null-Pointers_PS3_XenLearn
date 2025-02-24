@@ -216,7 +216,12 @@ def dashboard():
         <style>
         .stApp { background-color: #f5f5f5; }
         .nav-button { margin: 5px 0; }
-        p, h1, h2, h3, h4, h5, h6 { color: black !important; }
+        p { color: black !important; }
+        h4,h5,h6 {color: black !important}
+        h1, h2, h3 {color: black !important}
+        [data-testid="stMetricValue"] div { color: black !important; }
+        [data-testid="stMetricDelta"] div { color: black !important; }
+        
         </style>
     """, unsafe_allow_html=True)
     
@@ -264,7 +269,7 @@ def dashboard():
         for course in recommended_courses:
             st.markdown(f"""
                 <div style='background-color: white; padding: 15px; border-radius: 10px; margin: 10px 0;'>
-                    <h4 style='color: white;'>{course}</h4>
+                    <h4 style='color: black;'>{course}</h4>
                     <p style='color: black;'>Level: Beginner | Duration: 4 weeks | Rating: ⭐⭐⭐⭐⭐</p>
                     <div style='background-color: #f0f0f0; border-radius: 5px; padding: 5px;'>
                         <small style='color: black;'>Progress: 65%</small>
