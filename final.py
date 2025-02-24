@@ -116,9 +116,8 @@ def login_page():
     col1, col2 = st.columns(2)
     
     with col1:
-        st.image("https://via.placeholder.com/150", caption="Logo")
-        st.markdown("### EcoLearn")
-        st.markdown("*Transforming physical resources into digital learning experiences*")
+        st.markdown("# XenLearn")
+        st.markdown("### Transforming physical resources into digital learning experiences")
     
     with col2:
         st.markdown("### Welcome!")
@@ -584,7 +583,7 @@ def dashboard():
             
 def main():
     initialize_session_state()
-    st.set_page_config(page_title="EcoLearn", layout="wide")
+    st.set_page_config(page_title="XenLearn", layout="wide")
     
     if not st.session_state.logged_in:
         login_page()
