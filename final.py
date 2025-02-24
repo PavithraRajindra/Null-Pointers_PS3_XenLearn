@@ -296,10 +296,10 @@ def get_camera_course_recommendations(detected_objects):
     return recommendations
 
 def object_detection():
-    st.title("Real-time Course Finder")
+    st.title("Course Finder - Photo Analysis")
     navigation_buttons()
     
-    # Add the original styling from dashboard
+    # Add the styling
     st.markdown("""
         <style>
         .stApp { background-color: #f5f5f5; }
@@ -318,10 +318,10 @@ def object_detection():
     # Load model
     model, transforms = load_model()
     
-    # Create layout similar to dashboard
+    # Create layout
     left_col, main_col, right_col = st.columns([1,2,1])
     
-    # Left Navigation (keeping consistent with dashboard)
+    # Left Navigation
     with left_col:
         st.markdown("### Navigation")
         if st.button("👤 Profile"):
@@ -334,64 +334,61 @@ def object_detection():
         st.button("🎓 Certifications")
         st.button("⚙️ Settings")
     
-    # Main content (camera feed and detections)
+    # Main content
     with main_col:
-        # Video feed placeholder
-        video_placeholder = st.empty()
+        # Initialize session state for captured image
+        if 'captured_image' not in st.session_state:
+            st.session_state.captured_image = None
+        if 'analyzed_results' not in st.session_state:
+            st.session_state.analyzed_results = None
         
-        # Initialize camera
-        cap = cv2.VideoCapture(0)
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-        cap.set(cv2.CAP_PROP_FPS, 30)
+        # Camera input and capture button
+        camera_col, button_col = st.columns([3,1])
+        with camera_col:
+            img_file_buffer = st.camera_input("Take a picture")
         
-        if not cap.isOpened():
-            st.error("Unable to access camera. Please check your camera permissions.")
-            return
-        
-        stop_button = st.button("Stop Camera")
-        
-        # Process frames
-        try:
-            last_update = time.time()
-            update_interval = 0.1
+        # Process the captured image
+        if img_file_buffer is not None:
+            # Convert the file buffer to opencv image
+            bytes_data = img_file_buffer.getvalue()
+            cv2_img = cv2.imdecode(np.frombuffer(bytes_data, np.uint8), cv2.IMREAD_COLOR)
             
-            while not stop_button:
-                ret, frame = cap.read()
-                if not ret:
-                    break
-                
-                # Process frame and draw detections
-                prediction = process_frame(frame, model, transforms)
-                annotated_frame, detected_objects = draw_detections(frame, prediction)
-                
-                # Update video feed
-                video_placeholder.image(annotated_frame, channels="BGR")
-                
-                # Update course recommendations
-                if time.time() - last_update >= update_interval:
-                    st.session_state.detected_objects = detected_objects
-                    last_update = time.time()
-                
-        finally:
-            cap.release()
+            # Store the captured image
+            st.session_state.captured_image = cv2_img
+            
+            # Process image and draw detections
+            prediction = process_frame(cv2_img, model, transforms)
+            annotated_frame, detected_objects = draw_detections(cv2_img, prediction)
+            
+            # Store detected objects
+            st.session_state.detected_objects = detected_objects
+            
+            # Show annotated image
+            st.image(annotated_frame, channels="BGR", caption="Analyzed Image")
+            
+            # Show detected objects
+            if detected_objects:
+                st.write("Detected Objects:", ", ".join(detected_objects))
     
-    # Right sidebar (recommendations from camera)
+    # Right sidebar (recommendations)
     with right_col:
-        st.markdown("### Detected Object Courses")
-        recommendations = get_camera_course_recommendations(st.session_state.detected_objects)
-        
-        if recommendations:
-            for course in recommendations:
-                st.markdown(f"""
-                    <div style='background-color: white; padding: 15px; border-radius: 10px; margin: 10px 0;'>
-                        <h4 style='color: black;'>{course['title']}</h4>
-                        <p style='color: black;'>Level: {course['level']}</p>
-                        <p style='color: black;'>Duration: {course['duration']}</p>
-                    </div>
-                """, unsafe_allow_html=True)
+        st.markdown("### Recommended Courses")
+        if hasattr(st.session_state, 'detected_objects') and st.session_state.detected_objects:
+            recommendations = get_camera_course_recommendations(st.session_state.detected_objects)
+            
+            if recommendations:
+                for course in recommendations:
+                    st.markdown(f"""
+                        <div style='background-color: white; padding: 15px; border-radius: 10px; margin: 10px 0;'>
+                            <h4 style='color: black;'>{course['title']}</h4>
+                            <p style='color: black;'>Level: {course['level']}</p>
+                            <p style='color: black;'>Duration: {course['duration']}</p>
+                        </div>
+                    """, unsafe_allow_html=True)
+            else:
+                st.info("No course recommendations found for detected objects.")
         else:
-            st.info("Point your camera at objects to get course recommendations!")
+            st.info("Take a picture to get course recommendations!")
 
 def dashboard():
     st.markdown("""
