@@ -10,6 +10,10 @@ import random
 import os
 import torch
 from torchvision.models.detection import fasterrcnn_resnet50_fpn_v2, FasterRCNN_ResNet50_FPN_V2_Weights
+import google.generativeai as genai
+
+# Initialize Gemini API
+genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 
 # Create a users directory if it doesn't exist
 if not os.path.exists('users'):
@@ -295,6 +299,63 @@ def get_camera_course_recommendations(detected_objects):
                 seen_courses.add(key)
     return recommendations
 
+def get_project_suggestions(detected_objects):
+    """Get creative project suggestions based on detected objects using Gemini API"""
+    if not detected_objects:
+        return []
+    
+    try:
+        objects_list = ", ".join(detected_objects)
+        prompt = f"""Given these objects: {objects_list}
+        Generate exactly 3 creative, fun, and educational experiments or projects that can be done using these items. These experiments should be of professional level that one can issue certifications for.
+        
+        Return ONLY a valid JSON array with exactly this structure and no additional text:
+        [
+            {{
+                "title": "Project Title",
+                "description": "Project description",
+                "difficulty": "easy/medium/hard",
+                "time": "30 minutes"
+            }},
+            {{
+                "title": "Second Project",
+                "description": "Second description",
+                "difficulty": "easy/medium/hard",
+                "time": "1 hour"
+            }},
+            {{
+                "title": "Third Project",
+                "description": "Third description",
+                "difficulty": "easy/medium/hard",
+                "time": "45 minutes"
+            }}
+        ]"""
+
+        model = genai.GenerativeModel('gemini-pro')
+        response = model.generate_content(prompt)
+        
+        # Add safety check for response
+        if not response.text:
+            return []
+            
+        try:
+            # Clean the response text and parse JSON
+            cleaned_text = response.text.strip()
+            suggestions = json.loads(cleaned_text)
+            
+            # Validate the structure
+            if not isinstance(suggestions, list):
+                return []
+                
+            return suggestions
+        except json.JSONDecodeError as je:
+            st.error(f"Invalid JSON format in response: {je}")
+            return []
+            
+    except Exception as e:
+        st.error(f"Error generating project suggestions: {str(e)}")
+        return []
+
 def object_detection():
     st.title("Course Finder - Photo Analysis")
     navigation_buttons()
@@ -387,6 +448,24 @@ def object_detection():
                     """, unsafe_allow_html=True)
             else:
                 st.info("No course recommendations found for detected objects.")
+        
+        # Add project suggestions section
+        st.markdown("### Creative Projects")
+        if hasattr(st.session_state, 'detected_objects') and st.session_state.detected_objects:
+            projects = get_project_suggestions(st.session_state.detected_objects)
+            
+            if projects:
+                for project in projects:
+                    st.markdown(f"""
+                        <div style='background-color: white; padding: 15px; border-radius: 10px; margin: 10px 0;'>
+                            <h4 style='color: black;'>{project['title']}</h4>
+                            <p style='color: black;'>{project['description']}</p>
+                            <p style='color: black;'>Difficulty: {project['difficulty']}</p>
+                            <p style='color: black;'>Time: {project['time']}</p>
+                        </div>
+                    """, unsafe_allow_html=True)
+            else:
+                st.info("No project suggestions available.")
         else:
             st.info("Take a picture to get course recommendations!")
 
