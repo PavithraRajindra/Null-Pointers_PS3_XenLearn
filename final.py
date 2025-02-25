@@ -84,6 +84,8 @@ def initialize_session_state():
         st.session_state.user_profile = None
     if 'navigation_history' not in st.session_state:
         st.session_state.navigation_history = []
+    if 'navigation_future' not in st.session_state:  # Add this for forward navigation
+        st.session_state.navigation_future = []
     if 'detected_objects' not in st.session_state:
         st.session_state.detected_objects = set()
     if 'user_email' not in st.session_state:
@@ -92,10 +94,56 @@ def initialize_session_state():
         st.session_state.user_token = None
 
 def navigate_to(page):
+    """Navigate to a new page and update history"""
     if st.session_state.current_page != page:
+        # Add current page to history before changing
         st.session_state.navigation_history.append(st.session_state.current_page)
+        # Clear forward history when navigating to a new page
+        st.session_state.navigation_future = []
         st.session_state.current_page = page
         st.rerun()
+
+def go_back():
+    if st.session_state.navigation_history:
+        # Store current page in forward history
+        st.session_state.navigation_future.append(st.session_state.current_page)
+        # Go to previous page
+        st.session_state.current_page = st.session_state.navigation_history.pop()
+        st.rerun()
+
+def go_forward():
+    if st.session_state.navigation_future:
+        # Store current page in back history
+        st.session_state.navigation_history.append(st.session_state.current_page)
+        # Go to next page
+        st.session_state.current_page = st.session_state.navigation_future.pop()
+        st.rerun()
+
+def navigation_buttons():
+    """Create navigation buttons in a container at the top of the page"""
+    with st.container():
+        col1, col2, col3, col4 = st.columns([1, 2, 3, 1])
+        with col1:
+            if st.button("← Back", key="back_btn", disabled=len(st.session_state.navigation_history) == 0):
+                go_back()
+        with col2:
+            if st.button("Forward →", key="forward_btn", disabled=len(st.session_state.navigation_future) == 0):
+                go_forward()
+        with col4:
+            if st.button("Logout", key="logout_btn", type="primary"):
+                logout()
+
+def logout():
+    # Clear all session state
+    st.session_state.logged_in = False
+    st.session_state.user_email = None
+    st.session_state.user_token = None
+    st.session_state.user_profile = None
+    st.session_state.user_interests = []
+    st.session_state.navigation_history = []
+    st.session_state.navigation_future = []
+    st.session_state.current_page = 'login'
+    st.rerun()
 
 def handle_login(email, password):
     try:
@@ -144,75 +192,9 @@ def handle_signup(email, password, full_name):
     except Exception as e:
         st.error(f"Sign up failed: {str(e)}")
         return False
-def logout():
-    st.session_state.logged_in = False
-    st.session_state.user_email = None
-    st.session_state.user_token = None
-    st.session_state.user_profile = None
-    st.session_state.current_page = 'login'
-    st.rerun()
-
-def go_back():
-    if st.session_state.navigation_history:
-        st.session_state.current_page = st.session_state.navigation_history.pop()
-        st.rerun()
-
-def navigation_buttons():
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("← Back") and st.session_state.navigation_history:
-            go_back()
-    with col2:
-        if st.button("Forward →") and st.session_state.current_page != 'dashboard':
-            navigate_to('dashboard')
-
-def login_page():
-    st.markdown("""
-        <style>
-        .login-container { padding: 2rem; }
-        .stAlert { color: black !important; }
-        </style>
-    """, unsafe_allow_html=True)
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown("# XenLearn")
-        st.markdown("### Transforming physical resources into digital learning experiences")
-    
-    with col2:
-        st.markdown("### Welcome!")
-        tab1, tab2 = st.tabs(["Login", "Sign Up"])
-        
-        with tab1:
-            email = st.text_input("Email", key="login_email")
-            password = st.text_input("Password", type="password", key="login_password")
-            if st.button("Login"):
-                if email and password:
-                    if handle_login(email, password):
-                        st.success("Login successful!")
-                        st.rerun()
-                else:
-                    st.warning("Please enter both email and password.")
-                
-        with tab2:
-            full_name = st.text_input("Full Name", key="signup_name")
-            email = st.text_input("Email", key="signup_email")
-            password = st.text_input("Password", type="password", key="signup_password")
-            confirm_password = st.text_input("Confirm Password", type="password", key="signup_confirm")
-            
-            if st.button("Sign Up"):
-                if not all([full_name, email, password, confirm_password]):
-                    st.warning("Please fill in all fields.")
-                elif password != confirm_password:
-                    st.warning("Passwords do not match.")
-                else:
-                    if handle_signup(email, password, full_name):
-                        st.success("Sign up successful! Please proceed to set your interests.")
-                        st.rerun()
-
 
 def interests_page():
+    navigation_buttons()  # Add this as first line
     st.title("Select Your Interests")
     
     subjects = [
@@ -238,6 +220,7 @@ def interests_page():
         st.rerun()
 
 def profile_page():
+    navigation_buttons()  # Add this as first line
     st.title("Profile Settings")
 
     if not st.session_state.user_profile:
@@ -269,6 +252,7 @@ def profile_page():
                 st.error(f"Failed to update profile: {str(e)}")
 
 def collaboration_page():
+    navigation_buttons()  # Add this as first line
     st.title("Collaboration Hub")
     
     # Simulated online users
@@ -445,8 +429,8 @@ def get_project_suggestions(detected_objects):
         return []
 
 def object_detection():
+    navigation_buttons()  # Add this as first line
     st.title("Course Finder - Photo Analysis")
-    navigation_buttons()
     
     # Add the styling
     st.markdown("""
@@ -473,13 +457,15 @@ def object_detection():
     # Left Navigation
     with left_col:
         st.markdown("### Navigation")
-        if st.button("👤 Profile"):
+        if st.button("👤 Profile", key="nav_profile"):
             navigate_to('profile')
         st.button("📚 Courses")
-        if st.button("🏠 Back to Dashboard"):
-            navigate_to('dashboard')
-        if st.button("👥 Collaborate"):
+        if st.button("📷 Search with Camera", key="nav_camera"):
+            navigate_to('camera')
+        if st.button("👥 Collaborate", key="nav_collaborate"):
             navigate_to('collaborate')
+        st.button("🏪 Reward Shop")
+        st.button("🤖 DoubtAI")
         st.button("🎓 Certifications")
         st.button("⚙️ Settings")
     
@@ -558,6 +544,7 @@ def object_detection():
             st.info("Take a picture to get course recommendations!")
 
 def dashboard():
+    navigation_buttons()
     st.markdown("""
         <style>
         .stApp { background-color: #f5f5f5; }
@@ -594,16 +581,14 @@ def dashboard():
     # Left Navigation
     with left_col:
         st.markdown("### Navigation")
-        if st.button("👤 Profile"):
-            st.session_state.current_page = 'profile'
-            st.rerun()
-        st.button("📚 Courses")
-        if st.button("📷 Search with Camera"):
-            st.session_state.current_page = 'camera'
-            st.rerun()
-        if st.button("👥 Collaborate"):
-            st.session_state.current_page = 'collaborate'
-            st.rerun()
+        if st.button("👤 Profile", key="nav_profile"):
+            navigate_to('profile')
+        if st.button("📷 Search with Camera", key="nav_camera"):
+            navigate_to('camera')
+        if st.button("👥 Collaborate", key="nav_collaborate"):
+            navigate_to('collaborate')
+        st.button("🏪 Reward Shop")
+        st.button("🤖 DoubtAI")
         st.button("🎓 Certifications")
         st.button("⚙️ Settings")
     
@@ -670,6 +655,53 @@ def dashboard():
                 </div>
             """, unsafe_allow_html=True)
             
+def login_page():
+    """Display the login and signup page"""
+    st.markdown("""
+        <style>
+        .login-container { padding: 2rem; }
+        .stAlert { color: black !important; }
+        </style>
+    """, unsafe_allow_html=True)
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("# XenLearn")
+        st.markdown("### Transforming physical resources into digital learning experiences")
+        
+    with col2:
+        st.markdown("### Welcome!")
+        tab1, tab2 = st.tabs(["Login", "Sign Up"])
+        
+        with tab1:
+            email = st.text_input("Email", key="login_email")
+            password = st.text_input("Password", type="password", key="login_password")
+            
+            if st.button("Login", key="login_button"):
+                if email and password:
+                    if handle_login(email, password):
+                        st.success("Login successful!")
+                        st.rerun()
+                else:
+                    st.warning("Please enter both email and password.")
+                
+        with tab2:
+            full_name = st.text_input("Full Name", key="signup_name")
+            email = st.text_input("Email", key="signup_email")
+            password = st.text_input("Password", type="password", key="signup_password")
+            confirm_password = st.text_input("Confirm Password", type="password", key="signup_confirm")
+            
+            if st.button("Sign Up", key="signup_button"):
+                if not all([full_name, email, password, confirm_password]):
+                    st.warning("Please fill in all fields.")
+                elif password != confirm_password:
+                    st.warning("Passwords do not match.")
+                else:
+                    if handle_signup(email, password, full_name):
+                        st.success("Sign up successful! Please proceed to set your interests.")
+                        st.rerun()
+
 def main():
     initialize_session_state()
     st.set_page_config(page_title="XenLearn", layout="wide")
