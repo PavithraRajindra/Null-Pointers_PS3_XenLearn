@@ -371,9 +371,10 @@ def doubtai_page():
                     content = ": ".join(msg.split(": ")[1:])
                     
                     if sender == "You":
-                        st.markdown(f"<div style='background-color: #e6f7ff; padding: 10px; border-radius: 10px; margin: 5px 0;'><b>{sender}:</b> {content}</div>", unsafe_allow_html=True)
+                        st.markdown(f"<div style='background-color: #e6f7ff; padding: 10px; border-radius: 10px; margin: 5px 0; color: black'><b>{sender}:</b> {content}</div>", unsafe_allow_html=True)
+
                     else:
-                        st.markdown(f"<div style='background-color: #f0f0f0; padding: 10px; border-radius: 10px; margin: 5px 0;'><b>{sender}:</b> {content}</div>", unsafe_allow_html=True)
+                        st.markdown(f"<div style='background-color: #f0f0f0; padding: 10px; border-radius: 10px; margin: 5px 0; color: black'><b>{sender}:</b> {content}</div>", unsafe_allow_html=True)
                 st.markdown("---")
     
     # Display only the current conversation
