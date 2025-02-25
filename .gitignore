@@ -1,3 +1,4 @@
 .streamlit/secrets.toml
 firebase_config.py
 __pycache__/firebase_config.cpython-312.pyc
+__pycache__/firebase_config.cpython-311.pyc
