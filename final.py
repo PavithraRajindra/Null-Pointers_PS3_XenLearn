@@ -1073,9 +1073,13 @@ def dashboard():
             navigate_to('collaborate')
             st.rerun()
         st.button("🏪 Reward Shop")
-        st.button("🤖 DoubtAI")
-        st.button("🎓 Certifications")
-        st.button("⚙️ Settings")
+        if st.button("🤖 DoubtAI", key="nav_doubtai"):
+            navigate_to('doubtai')  # Point the DoubtAI to the chatbot page
+        if st.button("🏅 Certificates", key="nav_certificates"):
+            navigate_to('certificates')
+            
+        if st.button("⚙️ Settings", key="nav_settings"):
+            navigate_to('settings')
     
     # Main Content
     with main_col:
@@ -1191,6 +1195,9 @@ def main():
     initialize_session_state()
     st.set_page_config(page_title="XenLearn", layout="wide")
     
+    if 'current_conversation' not in st.session_state:
+        st.session_state.current_conversation = []
+    
     if not st.session_state.logged_in:
         login_page()
     elif st.session_state.current_page == 'interests':
@@ -1203,6 +1210,12 @@ def main():
         profile_page()
     elif st.session_state.current_page == 'collaborate':
         collaboration_page()
+    elif st.session_state.current_page == 'doubtai':  # Changed from 'chatbot' to 'doubtai'
+        doubtai_page()
+    elif st.session_state.current_page == 'certificates':
+        certificates_page()  # Add this page function
+    elif st.session_state.current_page == 'settings':
+        settings_page()  # Add this page function
 
 if __name__ == "__main__":
     main()
