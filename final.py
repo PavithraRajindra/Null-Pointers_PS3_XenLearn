@@ -126,7 +126,7 @@ def navigation_buttons():
         with col1:
             if st.button("← Back", key="back_btn", disabled=len(st.session_state.navigation_history) == 0):
                 go_back()
-        with col2:
+        with col3:
             if st.button("Forward →", key="forward_btn", disabled=len(st.session_state.navigation_future) == 0):
                 go_forward()
         with col4:
@@ -460,6 +460,8 @@ def object_detection():
         if st.button("👤 Profile", key="nav_profile"):
             navigate_to('profile')
         st.button("📚 Courses")
+        if st.button("🏠 Back to Dashboard"):
+            navigate_to('dashboard')
         if st.button("📷 Search with Camera", key="nav_camera"):
             navigate_to('camera')
         if st.button("👥 Collaborate", key="nav_collaborate"):
@@ -583,10 +585,13 @@ def dashboard():
         st.markdown("### Navigation")
         if st.button("👤 Profile", key="nav_profile"):
             navigate_to('profile')
+        
+        st.button("📚 Courses")
         if st.button("📷 Search with Camera", key="nav_camera"):
             navigate_to('camera')
         if st.button("👥 Collaborate", key="nav_collaborate"):
             navigate_to('collaborate')
+            st.rerun()
         st.button("🏪 Reward Shop")
         st.button("🤖 DoubtAI")
         st.button("🎓 Certifications")
