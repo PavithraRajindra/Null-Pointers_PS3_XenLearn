@@ -6,3 +6,4 @@ torch
 torchvision
 google-generativeai
 firebase-admin
+pyrebase4
