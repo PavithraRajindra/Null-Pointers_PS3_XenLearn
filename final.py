@@ -93,6 +93,15 @@ def initialize_session_state():
     if 'user_token' not in st.session_state:
         st.session_state.user_token = None
 
+# def navigate_to(page):
+#     """Navigate to a new page and update history"""
+#     if st.session_state.current_page != page:
+#         # Add current page to history before changing
+#         st.session_state.navigation_history.append(st.session_state.current_page)
+#         # Clear forward history when navigating to a new page
+#         st.session_state.navigation_future = []
+#         st.session_state.current_page = page
+#         st.rerun()
 def navigate_to(page):
     """Navigate to a new page and update history"""
     if st.session_state.current_page != page:
@@ -100,23 +109,99 @@ def navigate_to(page):
         st.session_state.navigation_history.append(st.session_state.current_page)
         # Clear forward history when navigating to a new page
         st.session_state.navigation_future = []
+        
+        # Special handling for DoubtAI page
+        if page == 'doubtai':
+            # If we're navigating to DoubtAI page, save current conversation to history if not empty
+            if 'current_conversation' in st.session_state and st.session_state.current_conversation:
+                if 'career_chat_history' not in st.session_state:
+                    st.session_state.career_chat_history = []
+                
+                # Save current conversation with timestamp
+                conversation_time = datetime.now().strftime("%Y-%m-%d %H:%M")
+                st.session_state.career_chat_history.append({
+                    "timestamp": conversation_time,
+                    "messages": st.session_state.current_conversation.copy()
+                })
+                
+            # Start a fresh conversation
+            st.session_state.current_conversation = []
+        
         st.session_state.current_page = page
         st.rerun()
 
+# def go_back():
+#     if st.session_state.navigation_history:
+#         # Store current page in forward history
+#         st.session_state.navigation_future.append(st.session_state.current_page)
+#         # Go to previous page
+#         st.session_state.current_page = st.session_state.navigation_history.pop()
+#         st.rerun()
+
+# def go_forward():
+#     if st.session_state.navigation_future:
+#         # Store current page in back history
+#         st.session_state.navigation_history.append(st.session_state.current_page)
+#         # Go to next page
+#         st.session_state.current_page = st.session_state.navigation_future.pop()
+#         st.rerun()
+
 def go_back():
     if st.session_state.navigation_history:
+        # Get the previous page
+        previous_page = st.session_state.navigation_history.pop()
+        
         # Store current page in forward history
         st.session_state.navigation_future.append(st.session_state.current_page)
+        
+        # If we're currently on the DoubtAI page, save the current conversation
+        if st.session_state.current_page == 'doubtai' and 'current_conversation' in st.session_state and st.session_state.current_conversation:
+            if 'career_chat_history' not in st.session_state:
+                st.session_state.career_chat_history = []
+            
+            # Save current conversation with timestamp
+            conversation_time = datetime.now().strftime("%Y-%m-%d %H:%M")
+            st.session_state.career_chat_history.append({
+                "timestamp": conversation_time,
+                "messages": st.session_state.current_conversation.copy()
+            })
+            
+            # Start a fresh conversation
+            st.session_state.current_conversation = []
+        
         # Go to previous page
-        st.session_state.current_page = st.session_state.navigation_history.pop()
+        st.session_state.current_page = previous_page
         st.rerun()
 
 def go_forward():
     if st.session_state.navigation_future:
+        # Get the next page
+        next_page = st.session_state.navigation_future.pop()
+        
         # Store current page in back history
         st.session_state.navigation_history.append(st.session_state.current_page)
+        
+        # If we're currently on the DoubtAI page, save the current conversation
+        if st.session_state.current_page == 'doubtai' and 'current_conversation' in st.session_state and st.session_state.current_conversation:
+            if 'career_chat_history' not in st.session_state:
+                st.session_state.career_chat_history = []
+            
+            # Save current conversation with timestamp
+            conversation_time = datetime.now().strftime("%Y-%m-%d %H:%M")
+            st.session_state.career_chat_history.append({
+                "timestamp": conversation_time,
+                "messages": st.session_state.current_conversation.copy()
+            })
+            
+            # Clear for when we might return to this page
+            st.session_state.current_conversation = []
+        
+        # If we're navigating to DoubtAI, prepare a fresh conversation
+        if next_page == 'doubtai':
+            st.session_state.current_conversation = []
+        
         # Go to next page
-        st.session_state.current_page = st.session_state.navigation_future.pop()
+        st.session_state.current_page = next_page
         st.rerun()
 
 def navigation_buttons():
@@ -251,55 +336,327 @@ def profile_page():
             except Exception as e:
                 st.error(f"Failed to update profile: {str(e)}")
 
+def doubtai_page():
+    navigation_buttons()  # Add navigation buttons at the top
+    st.title("DoubtAI - All Your Doubts Cleared!")
+    
+    # Initialize chat history in session state if it doesn't exist
+    if 'career_chat_history' not in st.session_state:
+        st.session_state.career_chat_history = []
+    
+    # Initialize current conversation in session state if it doesn't exist
+    if 'current_conversation' not in st.session_state:
+        st.session_state.current_conversation = []
+    
+    # Add a button to start a new conversation
+    if st.button("New Conversation"):
+        # Save current conversation to history before clearing
+        if st.session_state.current_conversation:
+            conversation_time = datetime.now().strftime("%Y-%m-%d %H:%M")
+            st.session_state.career_chat_history.append({
+                "timestamp": conversation_time,
+                "messages": st.session_state.current_conversation.copy()
+            })
+            # Clear current conversation
+            st.session_state.current_conversation = []
+            st.rerun()
+    
+    # Add dropdown to view past conversations if there are any
+    if st.session_state.career_chat_history:
+        with st.expander("View Past Conversations"):
+            for i, conv in enumerate(st.session_state.career_chat_history):
+                st.markdown(f"**Conversation {i+1}** - {conv['timestamp']}")
+                for msg in conv['messages']:
+                    sender = msg.split(": ")[0]
+                    content = ": ".join(msg.split(": ")[1:])
+                    
+                    if sender == "You":
+                        st.markdown(f"<div style='background-color: #e6f7ff; padding: 10px; border-radius: 10px; margin: 5px 0; color: black'><b>{sender}:</b> {content}</div>", unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"<div style='background-color: black; padding: 10px; border-radius: 10px; margin: 5px 0; color: white'><b>{sender}:</b> {content}</div>", unsafe_allow_html=True)
+                st.markdown("---")
+    
+    # Display only the current conversation
+    chat_container = st.container()
+    with chat_container:
+        for message in st.session_state.current_conversation:
+            sender = message.split(": ")[0]
+            content = ": ".join(message.split(": ")[1:])
+            
+            if sender == "You":
+                st.markdown(f"<div style='background-color: #e6f7ff; padding: 10px; border-radius: 10px; margin: 5px 0; color: black'><b>{sender}:</b> {content}</div>", unsafe_allow_html=True)
+            else:
+                st.markdown(f"<div style='background-color: black; padding: 10px; border-radius: 10px; margin: 5px 0; color: white'><b>{sender}:</b> {content}</div>", unsafe_allow_html=True)
+    
+    # Add the system prompt to provide context for the assistant
+    system_prompt = "You are DoubtAI, a helpful educational assistant designed to help students understand concepts and solve problems across various academic subjects including Mathematics, Physics, Chemistry, Biology, Computer Science, Literature, History, and more."
+    
+    # Input for new messages
+    with st.form(key="chat_form"):
+        user_input = st.text_area("Type your question here:", height=100)
+        submit_button = st.form_submit_button("Send")
+        
+        if submit_button and user_input:
+            # Add user message to current conversation
+            st.session_state.current_conversation.append(f"You: {user_input}")
+            
+            try:
+                # Generate response
+                prompt = f"{system_prompt}\n\n{user_input}"
+                response = genai.GenerativeModel('gemini-pro').generate_content(prompt)
+                bot_response = response.text
+                
+                # Add bot response to current conversation
+                st.session_state.current_conversation.append(f"DoubtAI: {bot_response}")
+                
+                # Rerun to display the updated chat
+                st.rerun()
+            except Exception as e:
+                st.error(f"Error generating response: {str(e)}")
+
+# def doubtai_page():
+#     navigation_buttons()  # Add navigation buttons at the top
+#     st.title("DoubtAI - All Your Doubts Cleared!")
+    
+#     # Initialize chat history in session state if it doesn't exist
+#     if 'career_chat_history' not in st.session_state:
+#         st.session_state.career_chat_history = []
+    
+#     # Initialize current conversation in session state if it doesn't exist
+#     if 'current_conversation' not in st.session_state:
+#         st.session_state.current_conversation = []
+    
+#     # Add a button to start a new conversation
+#     if st.button("New Conversation"):
+#         # Save current conversation to history before clearing
+#         if st.session_state.current_conversation:
+#             conversation_time = datetime.now().strftime("%Y-%m-%d %H:%M")
+#             st.session_state.career_chat_history.append({
+#                 "timestamp": conversation_time,
+#                 "messages": st.session_state.current_conversation.copy()
+#             })
+#             # Clear current conversation
+#             st.session_state.current_conversation = []
+#             st.rerun()
+    
+#     # Add dropdown to view past conversations if there are any
+#     if st.session_state.career_chat_history:
+#         with st.expander("View Past Conversations"):
+#             for i, conv in enumerate(st.session_state.career_chat_history):
+#                 st.markdown(f"**Conversation {i+1}** - {conv['timestamp']}")
+#                 for msg in conv['messages']:
+#                     sender = msg.split(": ")[0]
+#                     content = ": ".join(msg.split(": ")[1:])
+                    
+#                     if sender == "You":
+#                         st.markdown(f"<div style='background-color: #e6f7ff; padding: 10px; border-radius: 10px; margin: 5px 0;'><b>{sender}:</b> {content}</div>", unsafe_allow_html=True)
+#                     else:
+#                         st.markdown(f"<div style='background-color: #f0f0f0; padding: 10px; border-radius: 10px; margin: 5px 0;'><b>{sender}:</b> {content}</div>", unsafe_allow_html=True)
+#                 st.markdown("---")
+    
+#     # Display only the current conversation
+#     chat_container = st.container()
+#     with chat_container:
+#         for message in st.session_state.current_conversation:
+#             sender = message.split(": ")[0]
+#             content = ": ".join(message.split(": ")[1:])
+            
+#             if sender == "You":
+#                 st.markdown(f"<div style='background-color: #e6f7ff; padding: 10px; border-radius: 10px; margin: 5px 0;'><b>{sender}:</b> {content}</div>", unsafe_allow_html=True)
+#             else:
+#                 st.markdown(f"<div style='background-color: #f0f0f0; padding: 10px; border-radius: 10px; margin: 5px 0;'><b>{sender}:</b> {content}</div>", unsafe_allow_html=True)
+    
+#     # Add the system prompt to provide context for the assistant
+#     system_prompt = "You are DoubtAI, a helpful educational assistant designed to help students understand concepts and solve problems across various academic subjects including Mathematics, Physics, Chemistry, Biology, Computer Science, Literature, History, and more."
+    
+#     # Input for new messages
+#     with st.form(key="chat_form"):
+#         user_input = st.text_area("Type your question here:", height=100)
+#         submit_button = st.form_submit_button("Send")
+        
+#         if submit_button and user_input:
+#             # Add user message to current conversation
+#             st.session_state.current_conversation.append(f"You: {user_input}")
+            
+#             try:
+#                 # Generate response
+#                 prompt = f"{system_prompt}\n\n{user_input}"
+#                 response = genai.GenerativeModel('gemini-pro').generate_content(prompt)
+#                 bot_response = response.text
+                
+#                 # Add bot response to current conversation
+#                 st.session_state.current_conversation.append(f"DoubtAI: {bot_response}")
+                
+#                 # Rerun to display the updated chat
+#                 st.rerun()
+#             except Exception as e:
+#                 st.error(f"Error generating response: {str(e)}")
+
+# def doubtai_page():
+#     navigation_buttons()  # Add navigation buttons at the top
+#     st.title("DoubtAI - All Your Doubts Cleared!")
+    
+#     # Initialize chat history in session state if it doesn't exist
+#     if 'career_chat_history' not in st.session_state:
+#         st.session_state.career_chat_history = []
+    
+#     # Display chat history
+#     chat_container = st.container()
+#     with chat_container:
+#         for message in st.session_state.career_chat_history:
+#             sender = message.split(": ")[0]
+#             content = ": ".join(message.split(": ")[1:])
+            
+#             if sender == "You":
+#                 st.markdown(f"<div style='background-color: #e6f7ff; padding: 10px; border-radius: 10px; margin: 5px 0;'><b>{sender}:</b> {content}</div>", unsafe_allow_html=True)
+#             else:
+#                 st.markdown(f"<div style='background-color: #f0f0f0; padding: 10px; border-radius: 10px; margin: 5px 0;'><b>{sender}:</b> {content}</div>", unsafe_allow_html=True)
+    
+#     # Add the system prompt to provide context for the career advisor
+#     system_prompt = "You are DoubtAI, a helpful educational assistant designed to help students understand concepts and solve problems across various academic subjects including Mathematics, Physics, Chemistry, Biology, Computer Science, Literature, History, and more..'"
+    
+#     # Input for new messages
+#     with st.form(key="chat_form"):
+#         user_input = st.text_area("Type your question here:", height=100)
+#         submit_button = st.form_submit_button("Send")
+        
+#         if submit_button and user_input:
+#             # Add user message to history
+#             st.session_state.career_chat_history.append(f"You: {user_input}")
+            
+#             try:
+#                 # Generate response
+#                 prompt = f"{system_prompt}\n\n{user_input}"
+#                 response = genai.GenerativeModel('gemini-pro').generate_content(prompt)
+#                 bot_response = response.text
+                
+#                 # Add bot response to history
+#                 st.session_state.career_chat_history.append(f"DoubtAI: {bot_response}")
+                
+#                 # Rerun to display the updated chat
+#                 st.rerun()
+#             except Exception as e:
+#                 st.error(f"Error generating response: {str(e)}")
+
 def collaboration_page():
     navigation_buttons()  # Add this as first line
     st.title("Collaboration Hub")
     
-    # Simulated online users
-    online_users = [
-        {"name": "Alice Smith", "expertise": "Physics"},
-        {"name": "Bob Johnson", "expertise": "Mathematics"},
-        {"name": "Carol Davis", "expertise": "Chemistry"}
+    # Google Meet style page
+    st.markdown("""
+        <style>
+        .meet-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .meet-input {
+            width: 100%;
+            padding: 12px;
+            margin: 20px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .meet-link {
+            background-color: #1a73e8;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+        .meet-description {
+            margin: 20px 0;
+            color: #5f6368;
+            font-size: 14px;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+    
+    # Generate a unique meeting ID if not already generated
+    if 'meeting_id' not in st.session_state:
+        # Generate a random meeting ID similar to Google Meet
+        characters = "abcdefghijkmnopqrstuvwxyz0123456789"
+        meeting_id = "".join(random.choice(characters) for _ in range(3))
+        meeting_id += "-"
+        meeting_id += "".join(random.choice(characters) for _ in range(4))
+        meeting_id += "-"
+        meeting_id += "".join(random.choice(characters) for _ in range(3))
+        st.session_state.meeting_id = meeting_id
+    
+    # Display the Google Meet style interface
+    st.markdown(f"""
+        <div class="meet-container">
+            <h2>Start a group study session</h2>
+            <p class="meet-description">Share this link with your friends and learn together. XenLearn makes collaborative learning easy.</p>
+            <input type="text" class="meet-input" value="meet.xenlearn.com/{st.session_state.meeting_id}" readonly />
+            <p class="meet-description">Clicking the button below will copy the link and open a new session.</p>
+            <div class="meet-description">
+                <p>Your meeting is ready</p>
+                <p>Share this link with others you want in the meeting</p>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    if st.button("Join meeting", key="join_meeting"):
+        st.success(f"Meeting link copied! Share it with your friends: meet.xenlearn.com/{st.session_state.meeting_id}")
+        st.balloons()
+    
+    # Reset meeting button
+    if st.button("Create new meeting", key="new_meeting"):
+        # Generate a new random meeting ID
+        characters = "abcdefghijkmnopqrstuvwxyz0123456789"
+        meeting_id = "".join(random.choice(characters) for _ in range(3))
+        meeting_id += "-"
+        meeting_id += "".join(random.choice(characters) for _ in range(4))
+        meeting_id += "-"
+        meeting_id += "".join(random.choice(characters) for _ in range(3))
+        st.session_state.meeting_id = meeting_id
+        st.rerun()
+
+def certificates_page():
+    st.title("Certificates")
+    st.write("Here are some sample certificates you can view:")
+    
+    # Sample certificates (can be replaced with actual data or images)
+    certificates = [
+        "Certificate of Completion - Course A", 
+        "Certificate of Excellence - Course B", 
+        "Certificate of Participation - Course C"
     ]
     
-    # Display online users
-    st.subheader("Online Users")
-    selected_user = None
+    for cert in certificates:
+        st.write(cert)
     
-    for user in online_users:
-        col1, col2, col3 = st.columns([2,2,1])
-        with col1:
-            st.write(user["name"])
-        with col2:
-            st.write(user["expertise"])
-        with col3:
-            if st.button("Connect", key=user["name"]):
-                selected_user = user
+    # # Optionally, you can display images of the certificates or provide links to PDF files
+    # st.image("https://example.com/sample_certificate.png", caption="Sample Certificate", use_column_width=True)
+
+def settings_page():
+    st.title("Settings")
+    st.write("Adjust your preferences here.")
     
-    # Chat interface
-    if selected_user:
-        st.subheader(f"Chat with {selected_user['name']}")
-        
-        # Display chat messages
-        chat_container = st.container()
-        with chat_container:
-            for message in st.session_state.chat_messages:
-                st.write(f"{message['sender']}: {message['text']}")
-        
-        # Message input
-        message = st.text_input("Type your message")
-        if st.button("Send"):
-            if message:
-                st.session_state.chat_messages.append({
-                    "sender": "You",
-                    "text": message
-                })
-                # Simulate response
-                st.session_state.chat_messages.append({
-                    "sender": selected_user["name"],
-                    "text": f"Thanks for your message about {message}"
-                })
-                st.rerun()
+    # Theme Change
+    theme = st.selectbox("Select Theme", ["Light", "Dark"])
+    st.session_state.theme = theme
+    st.write(f"Selected theme: {theme}")
+    
+    # Notification Preferences
+    notifications = st.checkbox("Enable Notifications", value=True)
+    st.session_state.notifications = notifications
+    st.write(f"Notifications: {'Enabled' if notifications else 'Disabled'}")
+    
+    # Adjust user settings (example: preferred language)
+    language = st.selectbox("Preferred Language", ["English", "Spanish", "French"])
+    st.session_state.language = language
+    st.write(f"Selected language: {language}")
+
 
 def get_recommended_courses(interests):
     # Dictionary mapping interests to courses
@@ -378,61 +735,88 @@ def get_project_suggestions(detected_objects):
     
     try:
         objects_list = ", ".join(detected_objects)
-        prompt = f"""Given these objects: {objects_list}
-        Generate exactly 3 creative, fun, and educational experiments or projects that can be done using these items. These experiments should be of professional level that one can issue certifications for.
-        
-        Return ONLY a valid JSON array with exactly this structure and no additional text:
+        prompt = f'''You are an expert educational content creator specializing in project-based learning for high school and college students. Given these objects detected in the learning environment: {objects_list}, generate 3 sophisticated educational projects or experiments.
+
+        Requirements:
+        1. Projects must directly utilize the detected objects in meaningful ways
+        2. Focus on STEM, research, or analytical skills
+        3. Projects should be challenging but achievable
+        4. Each project must have clear educational value and practical applications
+        5. No basic or elementary-level projects
+        6. No projects that could be done without the listed objects
+        7. Include specific technical details and measurements where relevant
+        8. Materials used should strictly only be among {objects_list} or be something 
+
+        For each project, provide:
+        1. **Title**: Professional and descriptive title
+        2. **Description**: Detailed overview including scientific/technical principles involved
+        3. **Difficulty Level**: Specify ONLY as: "easy", "intermediate", or "hard"
+        4. **Estimated Time**: Realistic time frame including setup and execution
+        5. **Materials Needed**: Comprehensive list with specific requirements/specifications
+        6. **Step-by-Step Instructions**: VERY detailed technical steps with exact measurements, timings, and specific procedures. No vague instructions.
+        7. **Learning Outcomes**: Specific technical skills and knowledge gained
+        8. **Safety Precautions**: Include ONLY if there are genuine safety concerns, otherwise leave empty
+
+        IMPORTANT: Return ONLY a valid JSON array with exactly this structure and no additional text or markdown:
         [
             {{
                 "title": "Project Title",
-                "description": "Project description",
-                "difficulty": "easy/medium/hard",
-                "time": "30 minutes"
-            }},
-            {{
-                "title": "Second Project",
-                "description": "Second description",
-                "difficulty": "easy/medium/hard",
-                "time": "1 hour"
-            }},
-            {{
-                "title": "Third Project",
-                "description": "Third description",
-                "difficulty": "easy/medium/hard",
-                "time": "45 minutes"
+                "description": "Technical description with principles",
+                "difficulty": "easy/intermediate/hard",
+                "time": "estimated time",
+                "materials": ["item1 with specifications", "item2 with specifications"],
+                "steps": [
+                    "Step 1: Mix exactly 100ml of solution A with 50ml of solution B",
+                    "Step 2: Heat the mixture to precisely 75°C for 10 minutes"
+                ],
+                "learning_outcomes": [
+                    "Specific technical skill 1",
+                    "Specific knowledge gained 2"
+                ],
+                "safety_precautions": []
             }}
-        ]"""
+        ]'''
 
-        model = genai.GenerativeModel('gemini-pro')
+        model = genai.GenerativeModel('gemini-1.5-flash')
         response = model.generate_content(prompt)
         
         # Add safety check for response
         if not response.text:
             return []
+        
+        # Clean the response text
+        cleaned_text = response.text.strip()
+        
+        # Remove markdown code blocks if present
+        if "```json" in cleaned_text:
+            cleaned_text = cleaned_text.split("```json")[1].split("```")[0]
+        elif "```" in cleaned_text:
+            cleaned_text = cleaned_text.split("```")[1]
             
+        cleaned_text = cleaned_text.strip()
+        
+        # Debug output
+        print("Cleaned text:", cleaned_text)
+        
         try:
-            # Clean the response text and parse JSON
-            cleaned_text = response.text.strip()
             suggestions = json.loads(cleaned_text)
-            
-            # Validate the structure
-            if not isinstance(suggestions, list):
-                return []
-                
-            return suggestions
+            if isinstance(suggestions, list):
+                return suggestions
+            return []
         except json.JSONDecodeError as je:
-            st.error(f"Invalid JSON format in response: {je}")
+            print(f"JSON Error: {je}")
+            print("Failed text:", cleaned_text)
             return []
             
     except Exception as e:
-        st.error(f"Error generating project suggestions: {str(e)}")
+        print(f"Error: {str(e)}")
         return []
 
 def object_detection():
     navigation_buttons()  # Add this as first line
     st.title("Course Finder - Photo Analysis")
     
-    # Add the styling
+    # Add custom CSS for dark text on light background
     st.markdown("""
         <style>
         .stApp { background-color: #f5f5f5; }
@@ -444,6 +828,30 @@ def object_detection():
         [data-testid="stMetricLabel"] {
             color: black !important;
             font-weight: bold;
+        }
+        .project-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+        .project-container * {
+            color: white !important;
+        }
+        .stMarkdown {
+            color: black !important;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            color: black !important;
+        }
+        p {
+            color: black !important;
+        }
+        li {
+            color: black !important;
+        }
+        .stButton button {
+            color: white !important;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -459,17 +867,88 @@ def object_detection():
         st.markdown("### Navigation")
         if st.button("👤 Profile", key="nav_profile"):
             navigate_to('profile')
-        st.button("📚 Courses")
-        if st.button("🏠 Back to Dashboard"):
-            navigate_to('dashboard')
         if st.button("📷 Search with Camera", key="nav_camera"):
             navigate_to('camera')
         if st.button("👥 Collaborate", key="nav_collaborate"):
             navigate_to('collaborate')
         st.button("🏪 Reward Shop")
-        st.button("🤖 DoubtAI")
-        st.button("🎓 Certifications")
-        st.button("⚙️ Settings")
+        if st.button("🤖 DoubtAI", key="nav_doubtai"):
+            navigate_to('chatbot')  # Point the DoubtAI to the chatbot page
+        if st.button("🎓 Certifications"):
+            st.subheader("Certifications")
+            
+            # Add tabs for different certification categories
+            cert_tabs = st.tabs(["Technical", "Professional", "Academic"])
+            
+            with cert_tabs[0]:  # Technical certifications
+                st.markdown("#### Technical Certifications")
+                tech_certs = [
+                    {"name": "AWS Certified Solutions Architect", "issued": "Jan 2024", "expires": "Jan 2027"},
+                    {"name": "Microsoft Azure Developer Associate", "issued": "Mar 2023", "expires": "Mar 2026"},
+                    {"name": "Google Cloud Professional Data Engineer", "issued": "Jul 2024", "expires": "Jul 2027"}
+                ]
+                
+                for cert in tech_certs:
+                    with st.expander(cert["name"]):
+                        st.write(f"**Issued:** {cert['issued']}")
+                        st.write(f"**Expires:** {cert['expires']}")
+                        st.download_button("Download Certificate", "certificate_data", f"{cert['name']}.pdf")
+            
+            with cert_tabs[1]:  # Professional certifications
+                st.markdown("#### Professional Certifications")
+                prof_certs = [
+                    {"name": "Project Management Professional (PMP)", "issued": "Sep 2022", "expires": "Sep 2025"},
+                    {"name": "Scrum Master Certification", "issued": "Nov 2023", "expires": "Nov 2025"}
+                ]
+                
+                for cert in prof_certs:
+                    with st.expander(cert["name"]):
+                        st.write(f"**Issued:** {cert['issued']}")
+                        st.write(f"**Expires:** {cert['expires']}")
+                        st.download_button("Download Certificate", "certificate_data", f"{cert['name']}.pdf")
+            
+            with cert_tabs[2]:  # Academic certifications
+                st.markdown("#### Academic Certificates")
+                acad_certs = [
+                    {"name": "Data Science Specialization", "institution": "Stanford University", "completed": "May 2023"},
+                    {"name": "AI and Machine Learning", "institution": "MIT", "completed": "Dec 2022"}
+                ]
+                
+                for cert in acad_certs:
+                    with st.expander(cert["name"]):
+                        st.write(f"**Institution:** {cert['institution']}")
+                        st.write(f"**Completed:** {cert['completed']}")
+                        st.download_button("Download Certificate", "certificate_data", f"{cert['name']}.pdf")
+            
+            # Add button to upload new certificates
+            st.markdown("#### Upload New Certificate")
+            cert_file = st.file_uploader("Choose a certificate file", type=["pdf", "jpg", "png"])
+            cert_name = st.text_input("Certificate Name")
+            cert_type = st.selectbox("Certificate Type", ["Technical", "Professional", "Academic"])
+            
+            if st.button("Upload Certificate") and cert_file is not None and cert_name:
+                st.success(f"Certificate '{cert_name}' uploaded successfully!")
+        if st.button("⚙️ Settings"):
+            st.subheader("Settings")
+            
+            # User preferences section
+            st.markdown("#### User Preferences")
+            theme = st.selectbox("Theme", ["Light", "Dark", "System Default"])
+            notifications = st.toggle("Enable Notifications", value=True)
+            language = st.selectbox("Language", ["English", "Spanish", "French", "German", "Chinese"])
+            
+            # Application settings section
+            st.markdown("#### Application Settings")
+            auto_save = st.slider("Auto-save Interval (minutes)", 1, 60, 15)
+            font_size = st.select_slider("Font Size", options=["Small", "Medium", "Large"])
+            
+            # Data privacy section
+            st.markdown("#### Data Privacy")
+            data_sharing = st.toggle("Allow Anonymous Usage Data", value=False)
+            
+            # Save settings button
+            if st.button("Save Settings"):
+                st.success("Settings saved successfully!")
     
     # Main content
     with main_col:
@@ -573,14 +1052,15 @@ def dashboard():
     with col1:
         st.text_input("🔍 Search for courses, materials, or topics...", label_visibility='visible')
     with col2:
-        st.metric("Points", "1250", "+50 today")
+        st.metric("Coins", "0")
     with col3:
-        st.metric("Streak", "7 days", "Personal Best!")
+        st.metric("Streak", "0 days")
     
     # Main layout
     left_col, main_col, right_col = st.columns([1,2,1])
     
     # Left Navigation
+    # Update dashboard and other relevant pages with this navigation code:
     with left_col:
         st.markdown("### Navigation")
         if st.button("👤 Profile", key="nav_profile"):
