@@ -539,6 +539,7 @@ def detect_objects():
     return detected_labels
 
 def show_ar_page():
+    navigation_buttons()
     st.title("Learn with AR")
     
     st.write("Click below to start AR object detection.")
@@ -975,9 +976,6 @@ def object_detection():
             color: black !important;
         }
         h1, h2, h3, h4, h5, h6 {
-            color: black !important;
-        }
-        p {
             color: black !important;
         }
         li {
