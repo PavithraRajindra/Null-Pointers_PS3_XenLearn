@@ -93,15 +93,7 @@ def initialize_session_state():
     if 'user_token' not in st.session_state:
         st.session_state.user_token = None
 
-# def navigate_to(page):
-#     """Navigate to a new page and update history"""
-#     if st.session_state.current_page != page:
-#         # Add current page to history before changing
-#         st.session_state.navigation_history.append(st.session_state.current_page)
-#         # Clear forward history when navigating to a new page
-#         st.session_state.navigation_future = []
-#         st.session_state.current_page = page
-#         st.rerun()
+
 def navigate_to(page):
     """Navigate to a new page and update history"""
     if st.session_state.current_page != page:
@@ -130,21 +122,6 @@ def navigate_to(page):
         st.session_state.current_page = page
         st.rerun()
 
-# def go_back():
-#     if st.session_state.navigation_history:
-#         # Store current page in forward history
-#         st.session_state.navigation_future.append(st.session_state.current_page)
-#         # Go to previous page
-#         st.session_state.current_page = st.session_state.navigation_history.pop()
-#         st.rerun()
-
-# def go_forward():
-#     if st.session_state.navigation_future:
-#         # Store current page in back history
-#         st.session_state.navigation_history.append(st.session_state.current_page)
-#         # Go to next page
-#         st.session_state.current_page = st.session_state.navigation_future.pop()
-#         st.rerun()
 
 def go_back():
     if st.session_state.navigation_history:
@@ -414,129 +391,6 @@ def doubtai_page():
             except Exception as e:
                 st.error(f"Error generating response: {str(e)}")
 
-# def doubtai_page():
-#     navigation_buttons()  # Add navigation buttons at the top
-#     st.title("DoubtAI - All Your Doubts Cleared!")
-    
-#     # Initialize chat history in session state if it doesn't exist
-#     if 'career_chat_history' not in st.session_state:
-#         st.session_state.career_chat_history = []
-    
-#     # Initialize current conversation in session state if it doesn't exist
-#     if 'current_conversation' not in st.session_state:
-#         st.session_state.current_conversation = []
-    
-#     # Add a button to start a new conversation
-#     if st.button("New Conversation"):
-#         # Save current conversation to history before clearing
-#         if st.session_state.current_conversation:
-#             conversation_time = datetime.now().strftime("%Y-%m-%d %H:%M")
-#             st.session_state.career_chat_history.append({
-#                 "timestamp": conversation_time,
-#                 "messages": st.session_state.current_conversation.copy()
-#             })
-#             # Clear current conversation
-#             st.session_state.current_conversation = []
-#             st.rerun()
-    
-#     # Add dropdown to view past conversations if there are any
-#     if st.session_state.career_chat_history:
-#         with st.expander("View Past Conversations"):
-#             for i, conv in enumerate(st.session_state.career_chat_history):
-#                 st.markdown(f"**Conversation {i+1}** - {conv['timestamp']}")
-#                 for msg in conv['messages']:
-#                     sender = msg.split(": ")[0]
-#                     content = ": ".join(msg.split(": ")[1:])
-                    
-#                     if sender == "You":
-#                         st.markdown(f"<div style='background-color: #e6f7ff; padding: 10px; border-radius: 10px; margin: 5px 0;'><b>{sender}:</b> {content}</div>", unsafe_allow_html=True)
-#                     else:
-#                         st.markdown(f"<div style='background-color: #f0f0f0; padding: 10px; border-radius: 10px; margin: 5px 0;'><b>{sender}:</b> {content}</div>", unsafe_allow_html=True)
-#                 st.markdown("---")
-    
-#     # Display only the current conversation
-#     chat_container = st.container()
-#     with chat_container:
-#         for message in st.session_state.current_conversation:
-#             sender = message.split(": ")[0]
-#             content = ": ".join(message.split(": ")[1:])
-            
-#             if sender == "You":
-#                 st.markdown(f"<div style='background-color: #e6f7ff; padding: 10px; border-radius: 10px; margin: 5px 0;'><b>{sender}:</b> {content}</div>", unsafe_allow_html=True)
-#             else:
-#                 st.markdown(f"<div style='background-color: #f0f0f0; padding: 10px; border-radius: 10px; margin: 5px 0;'><b>{sender}:</b> {content}</div>", unsafe_allow_html=True)
-    
-#     # Add the system prompt to provide context for the assistant
-#     system_prompt = "You are DoubtAI, a helpful educational assistant designed to help students understand concepts and solve problems across various academic subjects including Mathematics, Physics, Chemistry, Biology, Computer Science, Literature, History, and more."
-    
-#     # Input for new messages
-#     with st.form(key="chat_form"):
-#         user_input = st.text_area("Type your question here:", height=100)
-#         submit_button = st.form_submit_button("Send")
-        
-#         if submit_button and user_input:
-#             # Add user message to current conversation
-#             st.session_state.current_conversation.append(f"You: {user_input}")
-            
-#             try:
-#                 # Generate response
-#                 prompt = f"{system_prompt}\n\n{user_input}"
-#                 response = genai.GenerativeModel('gemini-pro').generate_content(prompt)
-#                 bot_response = response.text
-                
-#                 # Add bot response to current conversation
-#                 st.session_state.current_conversation.append(f"DoubtAI: {bot_response}")
-                
-#                 # Rerun to display the updated chat
-#                 st.rerun()
-#             except Exception as e:
-#                 st.error(f"Error generating response: {str(e)}")
-
-# def doubtai_page():
-#     navigation_buttons()  # Add navigation buttons at the top
-#     st.title("DoubtAI - All Your Doubts Cleared!")
-    
-#     # Initialize chat history in session state if it doesn't exist
-#     if 'career_chat_history' not in st.session_state:
-#         st.session_state.career_chat_history = []
-    
-#     # Display chat history
-#     chat_container = st.container()
-#     with chat_container:
-#         for message in st.session_state.career_chat_history:
-#             sender = message.split(": ")[0]
-#             content = ": ".join(message.split(": ")[1:])
-            
-#             if sender == "You":
-#                 st.markdown(f"<div style='background-color: #e6f7ff; padding: 10px; border-radius: 10px; margin: 5px 0;'><b>{sender}:</b> {content}</div>", unsafe_allow_html=True)
-#             else:
-#                 st.markdown(f"<div style='background-color: #f0f0f0; padding: 10px; border-radius: 10px; margin: 5px 0;'><b>{sender}:</b> {content}</div>", unsafe_allow_html=True)
-    
-#     # Add the system prompt to provide context for the career advisor
-#     system_prompt = "You are DoubtAI, a helpful educational assistant designed to help students understand concepts and solve problems across various academic subjects including Mathematics, Physics, Chemistry, Biology, Computer Science, Literature, History, and more..'"
-    
-#     # Input for new messages
-#     with st.form(key="chat_form"):
-#         user_input = st.text_area("Type your question here:", height=100)
-#         submit_button = st.form_submit_button("Send")
-        
-#         if submit_button and user_input:
-#             # Add user message to history
-#             st.session_state.career_chat_history.append(f"You: {user_input}")
-            
-#             try:
-#                 # Generate response
-#                 prompt = f"{system_prompt}\n\n{user_input}"
-#                 response = genai.GenerativeModel('gemini-pro').generate_content(prompt)
-#                 bot_response = response.text
-                
-#                 # Add bot response to history
-#                 st.session_state.career_chat_history.append(f"DoubtAI: {bot_response}")
-                
-#                 # Rerun to display the updated chat
-#                 st.rerun()
-#             except Exception as e:
-#                 st.error(f"Error generating response: {str(e)}")
 
 def collaboration_page():
     navigation_buttons()  # Add this as first line
@@ -594,7 +448,7 @@ def collaboration_page():
     # Display the Google Meet style interface
     st.markdown(f"""
         <div class="meet-container">
-            <h2>Start a group study session</h2>
+            <h2 style=color:black>Start a group study session</h2>
             <p class="meet-description">Share this link with your friends and learn together. XenLearn makes collaborative learning easy.</p>
             <input type="text" class="meet-input" value="meet.xenlearn.com/{st.session_state.meeting_id}" readonly />
             <p class="meet-description">Clicking the button below will copy the link and open a new session.</p>
@@ -622,14 +476,14 @@ def collaboration_page():
         st.rerun()
 
 def certificates_page():
+    navigation_buttons()
     st.title("Certificates")
-    st.write("Here are some sample certificates you can view:")
+    st.write("Certificates obtained:")
     
     # Sample certificates (can be replaced with actual data or images)
     certificates = [
-        "Certificate of Completion - Course A", 
-        "Certificate of Excellence - Course B", 
-        "Certificate of Participation - Course C"
+        "Certificate of Completion - Course AI & ML", 
+        "Certificate of Excellence - Course Web Development"
     ]
     
     for cert in certificates:
@@ -638,7 +492,286 @@ def certificates_page():
     # # Optionally, you can display images of the certificates or provide links to PDF files
     # st.image("https://example.com/sample_certificate.png", caption="Sample Certificate", use_column_width=True)
 
+# Load object detection model
+@st.cache_resource
+def load_model():
+    weights = FasterRCNN_ResNet50_FPN_V2_Weights.DEFAULT
+    model = fasterrcnn_resnet50_fpn_v2(weights=weights, box_score_thresh=0.7)
+    model.eval()
+    return model, weights.transforms()
+
+def process_frame(frame, model, transforms):
+    """Process a single frame for object detection"""
+    frame = cv2.resize(frame, (640, 480))
+    img_tensor = transforms(Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)))
+    
+    with torch.no_grad():
+        prediction = model([img_tensor])
+    
+    return prediction[0]
+
+def detect_objects():
+    """Opens the camera, detects objects, and returns detected labels"""
+    model, transforms = load_model()
+    cap = cv2.VideoCapture(0)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+    cap.set(cv2.CAP_PROP_FPS, 30)
+    
+    if not cap.isOpened():
+        st.error("Unable to access camera. Please check your camera permissions.")
+        return None
+    
+    ret, frame = cap.read()
+    cap.release()
+    if not ret:
+        st.error("Failed to capture image from camera.")
+        return None
+    
+    prediction = process_frame(frame, model, transforms)
+    labels = prediction['labels'].cpu().numpy()
+    scores = prediction['scores'].cpu().numpy()
+    
+    weights = FasterRCNN_ResNet50_FPN_V2_Weights.DEFAULT
+    class_names = weights.meta["categories"]
+    
+    detected_labels = {class_names[label].lower() for label, score in zip(labels, scores) if score > 0.7}
+    return detected_labels
+
+def show_ar_page():
+    st.title("Learn with AR")
+    
+    st.write("Click below to start AR object detection.")
+    if st.button("Start AR Detection"):
+        detected_objects = detect_objects()
+        if detected_objects:
+            st.write("Detected objects:", detected_objects)
+            
+            if "cell phone" in detected_objects:
+                st.write("Displaying 3D Model of Cell Phone")
+                st.components.v1.iframe("https://tinyglb.com/viewer/06d63d40c76c4e4a8c7a6360401b0fb5", height=500)  # Updated link to the 3D model
+            else:
+                st.write("No AR-supported object detected.")
+
+
+def reward_shop_page():
+    navigation_buttons()
+    
+    # Apply styling consistent with other pages
+    st.markdown("""
+        <style>
+        .stApp { background-color: #f5f5f5; }
+        .nav-button { margin: 5px 0; }
+        h4,h5,h6 {color: black !important}
+        h1, h2, h3 {color: black !important}
+        [data-testid="stMetricValue"] div { color: black !important; }
+        [data-testid="stTextInput"] label { color: black !important; }
+        [data-testid="stMetricLabel"] {
+            color: black !important;
+            font-weight: bold;
+        }
+        .reward-card {
+            background-color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            transition: transform 0.3s;
+        }
+        .reward-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .coin-display {
+            background-color: #FFD700;
+            color: black;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            display: inline-block;
+        }
+        .redeem-button {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            padding: 5px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        /* Tab styling to ensure black text and orange on hover for all tabs (Electronics, Courses, Merchandise) */
+        .stTabs [role="tab"] {
+            color: black !important;
+            transition: color 0.3s;
+        }
+        .stTabs [role="tab"]:hover {
+            color: orange !important;
+        }
+        /* Make sure the selected tab indicator is orange too */
+        .stTabs [role="tab"][aria-selected="true"] {
+            color: black !important;
+            border-bottom-color: orange !important;
+        }
+        /* Style for coin prices */
+        .coin-price {
+            font-weight: bold;
+            color: black;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+    
+    # Main layout
+    left_col, main_col, right_col = st.columns([1,2,1])
+    
+    # Left Navigation (same as in dashboard)
+    with left_col:
+        st.markdown("### Navigation")
+        if st.button("👤 Profile", key="nav_profile"):
+            navigate_to('profile')
+        if st.button("📷 Search with Camera", key="nav_camera"):
+            navigate_to('camera')
+        if st.button("🧠 Learn with AR", key="nav_ar"):  # Add this line
+            navigate_to('ar')  # Navigate to AR page when clicked
+        if st.button("👥 Collaborate", key="nav_collaborate"):
+            navigate_to('collaborate')
+        if st.button("🏪 Reward Shop", key="nav_reward"):  # Update this line
+            navigate_to('reward_shop')
+        if st.button("🤖 DoubtAI", key="nav_doubtai"):
+            navigate_to('doubtai')
+        if st.button("🏅 Certificates", key="nav_certificates"):
+            navigate_to('certificates')
+        if st.button("⚙️ Settings", key="nav_settings"):
+            navigate_to('settings')
+    
+    # Main Content
+    with main_col:
+        # Display user points at the top-left
+        points_container = st.container()
+        with points_container:
+            st.markdown("""
+                <div class="coin-display">
+                    🪙 1250 XenCoins
+                </div>
+            """, unsafe_allow_html=True)
+        
+        st.markdown("## 🏪 Reward Shop")
+        st.markdown("Redeem your XenCoins for exciting rewards!")
+        
+        # Create tabs for different categories
+        tab1, tab2, tab3 = st.tabs(["Electronics", "Courses", "Merchandise"])
+        
+        # Electronics tab
+        with tab1:
+            electronics = [
+                {"name": "Premium Headphones", "price": 5000, "description": "High-quality over-ear headphones with noise cancellation", "image": "headphones.jpg"},
+                {"name": "Wireless Earbuds", "price": 3000, "description": "Lightweight earbuds with 24-hour battery life", "image": "earbuds.jpg"},
+                {"name": "Portable Bluetooth Speaker", "price": 2500, "description": "Compact, water-resistant speaker for on-the-go learning", "image": "speaker.jpg"},
+                {"name": "Digital Stylus Pen", "price": 1800, "description": "Precision stylus for tablets and touchscreens", "image": "stylus.jpg"}
+            ]
+            
+            # Create 2 columns for the items
+            cols = st.columns(2)
+            for i, item in enumerate(electronics):
+                with cols[i % 2]:
+                    st.markdown(f"""
+                        <div class="reward-card">
+                            <h4>{item['name']}</h4>
+                            <p style="color: gray;">{item['description']}</p>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span class="coin-price">🪙 {item['price']}</span>
+                                <button class="redeem-button">Redeem</button>
+                            </div>
+                        </div>
+                    """, unsafe_allow_html=True)
+        
+        # Courses tab
+        with tab2:
+            courses = [
+                {"name": "Advanced Data Science", "price": 2000, "description": "Master the art of data analysis and visualization", "level": "Advanced", "duration": "8 weeks"},
+                {"name": "AI & Machine Learning", "price": 2500, "description": "Learn the fundamentals of AI and ML algorithms", "level": "Intermediate", "duration": "10 weeks"},
+                {"name": "Web Development Bootcamp", "price": 1800, "description": "Comprehensive course on full-stack web development", "level": "Beginner", "duration": "12 weeks"},
+                {"name": "Digital Marketing Masterclass", "price": 1500, "description": "Learn SEO, social media marketing, and more", "level": "Intermediate", "duration": "6 weeks"},
+                {"name": "3D Modeling & Animation", "price": 2200, "description": "Create professional 3D models and animations", "level": "Intermediate", "duration": "8 weeks"}
+            ]
+            
+            # Create 2 columns for the items
+            cols = st.columns(2)
+            for i, course in enumerate(courses):
+                with cols[i % 2]:
+                    st.markdown(f"""
+                        <div class="reward-card">
+                            <h4>{course['name']}</h4>
+                            <p style="color: gray;">{course['description']}</p>
+                            <p>Level: {course['level']} | Duration: {course['duration']}</p>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span class="coin-price">🪙 {course['price']}</span>
+                                <button class="redeem-button">Unlock Course</button>
+                            </div>
+                        </div>
+                    """, unsafe_allow_html=True)
+        
+        # Merchandise tab
+        with tab3:
+            merchandise = [
+                {"name": "XenLearn T-Shirt", "price": 800, "description": "Comfortable cotton t-shirt with XenLearn logo"},
+                {"name": "Study Planner Notebook", "price": 500, "description": "Premium notebook with study planning templates"},
+                {"name": "XenLearn Backpack", "price": 1200, "description": "Durable backpack with laptop compartment"},
+                {"name": "Water Bottle", "price": 400, "description": "Eco-friendly insulated water bottle"}
+            ]
+            
+            # Create 2 columns for the items
+            cols = st.columns(2)
+            for i, item in enumerate(merchandise):
+                with cols[i % 2]:
+                    st.markdown(f"""
+                        <div class="reward-card">
+                            <h4>{item['name']}</h4>
+                            <p style="color: gray;">{item['description']}</p>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span class="coin-price">🪙 {item['price']}</span>
+                                <button class="redeem-button">Redeem</button>
+                            </div>
+                        </div>
+                    """, unsafe_allow_html=True)
+    
+    # Right Sidebar - Personalized Recommendations
+    with right_col:
+        st.markdown("### Recommended for You")
+        recommended_items = [
+            {"name": "Wireless Earbuds", "price": 3000},
+            {"name": "AI & Machine Learning", "price": 2500},
+            {"name": "XenLearn Backpack", "price": 1200}
+        ]
+        
+        for item in recommended_items:
+            st.markdown(f"""
+                <div style='background-color: white; padding: 15px; border-radius: 10px; margin: 10px 0;'>
+                    <h4 style='color: black;'>{item['name']}</h4>
+                    <p class="coin-price">🪙 {item['price']}</p>
+                    <button class="redeem-button" style="width: 100%;">Redeem</button>
+                </div>
+            """, unsafe_allow_html=True)
+        
+        # Display recent transactions
+        st.markdown("### Recent Transactions")
+        transactions = [
+            {"item": "Data Science Course", "date": "Feb 20, 2025", "coins": "-2000"},
+            {"item": "Daily Login Bonus", "date": "Feb 24, 2025", "coins": "+50"},
+            {"item": "Course Completion", "date": "Feb 15, 2025", "coins": "+500"}
+        ]
+        
+        for transaction in transactions:
+            coin_color = "green" if "+" in transaction["coins"] else "red"
+            st.markdown(f"""
+                <div style='background-color: white; padding: 10px; border-radius: 10px; margin: 5px 0;'>
+                    <div style='display: flex; justify-content: space-between;'>
+                        <span style='color: black;'>{transaction['item']}</span>
+                        <span style='color: {coin_color};'>{transaction['coins']}</span>
+                    </div>
+                    <small style='color: gray;'>{transaction['date']}</small>
+                </div>
+            """, unsafe_allow_html=True)
+
 def settings_page():
+    navigation_buttons()
     st.title("Settings")
     st.write("Adjust your preferences here.")
     
@@ -867,6 +1000,7 @@ def object_detection():
         st.markdown("### Navigation")
         if st.button("👤 Profile", key="nav_profile"):
             navigate_to('profile')
+        
         if st.button("📷 Search with Camera", key="nav_camera"):
             navigate_to('camera')
         if st.button("👥 Collaborate", key="nav_collaborate"):
@@ -1052,9 +1186,9 @@ def dashboard():
     with col1:
         st.text_input("🔍 Search for courses, materials, or topics...", label_visibility='visible')
     with col2:
-        st.metric("Coins", "0")
+        st.metric("🪙 XenCoins", "50", "+50 Daily Login Bonus")
     with col3:
-        st.metric("Streak", "0 days")
+        st.metric("⚡ Streak", "1 days", "Great Going!")
     
     # Main layout
     left_col, main_col, right_col = st.columns([1,2,1])
@@ -1065,14 +1199,16 @@ def dashboard():
         st.markdown("### Navigation")
         if st.button("👤 Profile", key="nav_profile"):
             navigate_to('profile')
-        
+        if st.button("🧠 Learn with AR", key="nav_ar"):  # Add this line
+            navigate_to('ar')  # Navigate to AR page when clicked
         st.button("📚 Courses")
         if st.button("📷 Search with Camera", key="nav_camera"):
             navigate_to('camera')
         if st.button("👥 Collaborate", key="nav_collaborate"):
             navigate_to('collaborate')
             st.rerun()
-        st.button("🏪 Reward Shop")
+        if st.button("🏪 Reward Shop", key="nav_reward"):  # Update this line
+            navigate_to('reward_shop')
         if st.button("🤖 DoubtAI", key="nav_doubtai"):
             navigate_to('doubtai')  # Point the DoubtAI to the chatbot page
         if st.button("🏅 Certificates", key="nav_certificates"):
@@ -1210,12 +1346,16 @@ def main():
         profile_page()
     elif st.session_state.current_page == 'collaborate':
         collaboration_page()
-    elif st.session_state.current_page == 'doubtai':  # Changed from 'chatbot' to 'doubtai'
+    elif st.session_state.current_page == 'doubtai':  
         doubtai_page()
     elif st.session_state.current_page == 'certificates':
         certificates_page()  # Add this page function
     elif st.session_state.current_page == 'settings':
         settings_page()  # Add this page function
+    elif st.session_state.current_page == 'reward_shop':  # Add this new condition
+        reward_shop_page()
+    elif st.session_state.current_page == 'ar':
+        show_ar_page()
 
 if __name__ == "__main__":
     main()
