@@ -492,14 +492,14 @@ def certificates_page():
     # # Optionally, you can display images of the certificates or provide links to PDF files
     # st.image("https://example.com/sample_certificate.png", caption="Sample Certificate", use_column_width=True)
 
-# Load the pre-trained model
+# Load object detection model
+@st.cache_resource
 def load_model():
-    weights = fasterrcnn_resnet50_fpn_v2.Weights.DEFAULT
+    weights = FasterRCNN_ResNet50_FPN_V2_Weights.DEFAULT
     model = fasterrcnn_resnet50_fpn_v2(weights=weights, box_score_thresh=0.7)
     model.eval()
     return model, weights.transforms()
 
-# Process a frame and detect objects
 def process_frame(frame, model, transforms):
     """Process a single frame for object detection"""
     frame = cv2.resize(frame, (640, 480))
@@ -510,71 +510,48 @@ def process_frame(frame, model, transforms):
     
     return prediction[0]
 
-# Detect objects from the captured frame
-def detect_objects(frame, model, transforms):
-    """Detect objects in the provided frame"""
+def detect_objects():
+    """Opens the camera, detects objects, and returns detected labels"""
+    model, transforms = load_model()
+    cap = cv2.VideoCapture(0)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+    cap.set(cv2.CAP_PROP_FPS, 30)
+    
+    if not cap.isOpened():
+        st.error("Unable to access camera. Please check your camera permissions.")
+        return None
+    
+    ret, frame = cap.read()
+    cap.release()
+    if not ret:
+        st.error("Failed to capture image from camera.")
+        return None
+    
     prediction = process_frame(frame, model, transforms)
     labels = prediction['labels'].cpu().numpy()
     scores = prediction['scores'].cpu().numpy()
-
-    weights = fasterrcnn_resnet50_fpn_v2.Weights.DEFAULT
+    
+    weights = FasterRCNN_ResNet50_FPN_V2_Weights.DEFAULT
     class_names = weights.meta["categories"]
     
     detected_labels = {class_names[label].lower() for label, score in zip(labels, scores) if score > 0.7}
     return detected_labels
 
-# Main AR detection page
 def show_ar_page():
     st.title("Learn with AR")
     
     st.write("Click below to start AR object detection.")
-    
-    # When button is clicked, show "Take Photo" option
     if st.button("Start AR Detection"):
-        # Show the "Take Photo" button
-        photo = st.camera_input("Take a photo")
-        
-        if photo:
-            # Load the model and transformations
-            model, transforms = load_model()
+        detected_objects = detect_objects()
+        if detected_objects:
+            st.write("Detected objects:", detected_objects)
             
-            # Open the image from the camera input
-            image = Image.open(photo)
-            frame = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)  # Convert to BGR for OpenCV
-            
-            # Detect objects
-            detected_objects = detect_objects(frame, model, transforms)
-            
-            # Display the detected objects
-            if detected_objects:
-                st.write("Detected objects:", detected_objects)
-                
-                # Display 3D model if a supported object is detected
-                if "cell phone" in detected_objects:
-                    st.write("Displaying 3D Model of Cell Phone")
-                    st.components.v1.iframe("https://tinyglb.com/viewer/06d63d40c76c4e4a8c7a6360401b0fb5", height=500)  # Updated link to the 3D model
-                else:
-                    st.write("No AR-supported object detected.")
+            if "cell phone" in detected_objects:
+                st.write("Displaying 3D Model of Cell Phone")
+                st.components.v1.iframe("https://tinyglb.com/viewer/06d63d40c76c4e4a8c7a6360401b0fb5", height=500)  # Updated link to the 3D model
             else:
-                st.write("No objects detected.")
-        
-    # Right sidebar with AR tips and supported objects
-    with st.sidebar:
-        st.markdown("### AR Learning Tips")
-        st.markdown("""
-        1. Point your camera at an object.
-        2. Click "Start AR Detection."
-        3. Take a photo and view the detected objects.
-        4. Explore the 3D model if available.
-        """)
-        
-        st.markdown("""
-        ### Supported Objects
-        • Cell phones  
-        • Books  
-        • Microscopes  
-        • More coming soon!
-        """)
+                st.write("No AR-supported object detected.")
 
 
 def reward_shop_page():
